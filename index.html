@@ -360,7 +360,7 @@ function getLatestLog(day, exName){
   const weeks = Object.keys(hist).map(Number).sort((a,b)=>b-a);
   for(const w of weeks){
     const entry = hist[w];
-    if(entry && entry.sets && entry.sets.some(s=>s && s.weight)) return {week:w, sets:entry.sets};
+    if(entry && entry.sets && entry.sets.some(s=>s && (s.weight || s.reps))) return {week:w, sets:entry.sets};
   }
   return null;
 }
