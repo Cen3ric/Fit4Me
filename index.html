@@ -456,11 +456,20 @@ function renderExercise(ex, opts){
       </div>
     </div>`;
 }
+function avgReps(done){
+  const nums = done.map(s=>parseFloat(s.reps)).filter(n=>!isNaN(n));
+  if(!nums.length) return null;
+  return Math.round(nums.reduce((a,b)=>a+b,0)/nums.length);
+}
 function formatLastSets(sets, noWeight, timeLabel){
   const done = sets.filter(s=> s && (noWeight ? s.reps : s.weight));
   if(!done.length) return "–";
+  if(noWeight){
+    const avg = avgReps(done);
+    if(avg === null) return "–";
+    return `Ø ${avg}${timeLabel ? ' Sek.' : ' Wdh.'}`;
+  }
   const top = done[done.length-1];
-  if(noWeight) return `${top.reps || '?'}${timeLabel ? ' Sek.' : ' Wdh.'}`;
   return `${top.weight}kg × ${top.reps || '?'}`;
 }
 function escapeAttr(s){ return s.replace(/"/g,'&quot;'); }
@@ -501,8 +510,14 @@ function getHistoryList(day, exName, noWeight, limit){
     if(!entry || !entry.sets) continue;
     const done = entry.sets.filter(s=> s && (noWeight ? s.reps : s.weight));
     if(!done.length) continue;
-    const top = done[done.length-1];
-    result.push({week:w, weight:top.weight, reps:top.reps});
+    if(noWeight){
+      const avg = avgReps(done);
+      if(avg === null) continue;
+      result.push({week:w, reps:avg});
+    } else {
+      const top = done[done.length-1];
+      result.push({week:w, weight:top.weight, reps:top.reps});
+    }
     if(result.length >= limit) break;
   }
   return result;
@@ -510,7 +525,7 @@ function getHistoryList(day, exName, noWeight, limit){
 function renderHistory(list, noWeight, timeLabel){
   if(!list.length) return "";
   const rows = list.map(h=>{
-    const val = noWeight ? `${h.reps || '?'}${timeLabel ? ' Sek.' : ' Wdh.'}` : `${h.weight}kg × ${h.reps || '?'}`;
+    const val = noWeight ? `Ø ${h.reps || '?'}${timeLabel ? ' Sek.' : ' Wdh.'}` : `${h.weight}kg × ${h.reps || '?'}`;
     return `<div class="history-row"><span class="mono">Wo ${h.week}</span><span>${val}</span></div>`;
   }).join("");
   return `<div class="history"><div class="history-title">Verlauf</div>${rows}</div>`;
