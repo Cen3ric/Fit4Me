@@ -6,7 +6,12 @@
 <title>Iron Log</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
 <meta name="theme-color" content="#12141a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Iron Log">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -88,9 +93,9 @@
   .ex.open .chev{transform:rotate(180deg);}
   .lastlog{font-size:11px; color:var(--teal); margin-top:2px; font-family:'IBM Plex Mono',monospace;}
 
-  .ex-body{max-height:0; overflow:hidden; transition:max-height .25s ease;}
-  .ex.open .ex-body{max-height:600px;}
-  .ex-body-inner{padding:0 14px 14px;}
+  .ex-body{display:grid; grid-template-rows:0fr; transition:grid-template-rows .25s ease; overflow:hidden;}
+  .ex.open .ex-body{grid-template-rows:1fr;}
+  .ex-body-inner{overflow:hidden; min-height:0; padding:0 14px 14px;}
   .note{font-size:12px; color:var(--muted); background:var(--surface2); border-radius:8px; padding:8px 10px; margin-bottom:10px;}
   .setrow{display:grid; grid-template-columns:28px 1fr 1fr 34px; gap:8px; align-items:center; margin-bottom:6px;}
   .setrow.noweight{grid-template-columns:28px 1fr 34px;}
@@ -112,6 +117,10 @@
   .history-title{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:6px;}
   .history-row{display:flex; justify-content:space-between; font-size:12px; color:var(--muted); padding:3px 0;}
   .history-row span:last-child{color:var(--text); font-family:'IBM Plex Mono',monospace;}
+
+  .sparkwrap{margin-bottom:8px;}
+  .sparkline{display:block;}
+  .sparkcaption{font-size:11px; color:var(--muted); margin-top:4px; text-align:right;}
 
   .rest-row{display:flex; align-items:center; justify-content:space-between; margin-top:8px; padding-top:10px; border-top:1px dashed var(--border);}
   .rest-row .lbl{font-size:12px; color:var(--muted);}
@@ -394,7 +403,6 @@ function renderExercise(ex, opts){
   const restLabel = ex.rest >= 60 ? `${Math.round(ex.rest/60*10)/10} Min.`.replace(".0","") : `${ex.rest} Sek.`;
 
   const id = "ex" + (exCounter++);
-  const isOpen = state.openEx[opts.day+"_"+ex.name];
   const latest = getLatestLog(opts.day, ex.name);
   const curLog = getCurrentLog(opts.day, state.week, ex.name);
   const best = getBestBefore(opts.day, ex.name, noWeight);
@@ -416,8 +424,8 @@ function renderExercise(ex, opts){
     setsHtml += `
       <div class="${rowClasses.join(' ')}" data-set="${i}">
         <div class="snum mono">${i+1}${flagDrop?'<span class="flagtag drop">DROP</span>':''}${flagRir?'<span class="flagtag rir">RIR 0-1</span>':''}<span class="flagtag pr" style="display:${isPR ? 'inline-block' : 'none'}">PR 🏆</span></div>
-        ${noWeight ? "" : `<input type="number" inputmode="decimal" placeholder="kg" value="${s.weight ?? ''}" data-field="weight">`}
-        <input type="number" inputmode="numeric" placeholder="${ex.timeLabel ? 'Sek' : 'Wdh'}" value="${s.reps ?? ''}" data-field="reps">
+        ${noWeight ? "" : `<input type="number" inputmode="decimal" min="0" enterkeyhint="next" placeholder="kg" value="${s.weight ?? ''}" data-field="weight">`}
+        <input type="number" inputmode="numeric" min="0" enterkeyhint="next" placeholder="${ex.timeLabel ? 'Sek' : 'Wdh'}" value="${s.reps ?? ''}" data-field="reps">
         <button class="check" data-field="done">${s.done ? '✓' : ''}</button>
       </div>`;
   }
@@ -522,13 +530,48 @@ function getHistoryList(day, exName, noWeight, limit){
   }
   return result;
 }
+function renderSparkline(list, noWeight, timeLabel){
+  if(list.length < 2) return "";
+  const points = list.slice().reverse(); // älteste zuerst
+  const valid = points
+    .map(h => ({week:h.week, v:parseFloat(noWeight ? h.reps : h.weight)}))
+    .filter(p => !isNaN(p.v));
+  if(valid.length < 2) return "";
+
+  const w = 100, h = 32, padX = 6, padY = 6;
+  const values = valid.map(p=>p.v);
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = (max - min) || 1;
+  const stepX = (w - padX*2) / (valid.length - 1);
+  const coords = valid.map((p,i)=>{
+    const x = padX + i*stepX;
+    const y = h - padY - ((p.v - min)/range) * (h - padY*2);
+    return {x, y, v:p.v, week:p.week};
+  });
+  const pathD = coords.map((c,i)=> (i===0?'M':'L') + c.x.toFixed(1) + ' ' + c.y.toFixed(1)).join(' ');
+  const unit = timeLabel ? ' Sek.' : (noWeight ? ' Wdh.' : ' kg');
+  const dots = coords.map((c,i) => {
+    const isEnd = i===0 || i===coords.length-1;
+    return `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="${isEnd?2.6:1.8}" fill="var(--teal)"><title>Wo ${c.week}: ${c.v}${unit}</title></circle>`;
+  }).join('');
+  const first = coords[0], last = coords[coords.length-1];
+  const trendColor = last.v >= first.v ? 'var(--teal)' : 'var(--coral)';
+  return `<div class="sparkwrap">
+    <svg class="sparkline" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" width="100%" height="36" role="img" aria-label="Verlauf von ${first.v}${unit} (Woche ${first.week}) bis ${last.v}${unit} (Woche ${last.week})">
+      <path d="${pathD}" fill="none" stroke="${trendColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+      ${dots}
+    </svg>
+    <div class="sparkcaption mono">Wo ${first.week}: ${first.v}${unit} → Wo ${last.week}: ${last.v}${unit}</div>
+  </div>`;
+}
 function renderHistory(list, noWeight, timeLabel){
   if(!list.length) return "";
+  const spark = renderSparkline(list, noWeight, timeLabel);
   const rows = list.map(h=>{
     const val = noWeight ? `Ø ${h.reps || '?'}${timeLabel ? ' Sek.' : ' Wdh.'}` : `${h.weight}kg × ${h.reps || '?'}`;
     return `<div class="history-row"><span class="mono">Wo ${h.week}</span><span>${val}</span></div>`;
   }).join("");
-  return `<div class="history"><div class="history-title">Verlauf</div>${rows}</div>`;
+  return `<div class="history"><div class="history-title">Verlauf</div>${spark}${rows}</div>`;
 }
 
 /* ---------------------------------------------------------------
@@ -584,6 +627,16 @@ function renderDay(){
 /* ---------------------------------------------------------------
    EVENTS
 --------------------------------------------------------------- */
+function focusNextInput(card, current){
+  const inputs = Array.from(card.querySelectorAll("input"));
+  const idx = inputs.indexOf(current);
+  if(idx > -1 && idx < inputs.length - 1){
+    inputs[idx+1].focus();
+    inputs[idx+1].select();
+  } else if(idx > -1){
+    current.blur();
+  }
+}
 function bindExerciseEvents(){
   document.querySelectorAll(".ex").forEach(card=>{
     const day = parseInt(card.dataset.day,10);
@@ -619,6 +672,12 @@ function bindExerciseEvents(){
           log.sets[idx][input.dataset.field] = input.value;
           saveState();
           updatePR();
+        });
+        input.addEventListener("keydown", (e)=>{
+          if(e.key === "Enter"){
+            e.preventDefault();
+            focusNextInput(card, input);
+          }
         });
       });
       row.querySelector(".check").addEventListener("click", ()=>{
@@ -711,7 +770,10 @@ function importData(file){
       if(!parsed || typeof parsed !== "object" || !("week" in parsed) || !("logs" in parsed)){
         throw new Error("invalid");
       }
-      state = parsed;
+      if(!confirm("Aktuellen Stand mit diesem Backup überschreiben? Das kann nicht rückgängig gemacht werden.")){
+        return;
+      }
+      state = Object.assign({week:17, day:1, logs:{}, openEx:{}}, parsed);
       saveState();
       renderAll();
       showToast("Backup importiert");
