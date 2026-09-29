@@ -426,7 +426,7 @@ function renderExercise(ex, opts){
         <div class="snum mono">${i+1}${flagDrop?'<span class="flagtag drop">DROP</span>':''}${flagRir?'<span class="flagtag rir">RIR 0-1</span>':''}<span class="flagtag pr" style="display:${isPR ? 'inline-block' : 'none'}">PR 🏆</span></div>
         ${noWeight ? "" : `<input type="number" inputmode="decimal" min="0" enterkeyhint="next" placeholder="kg" value="${s.weight ?? ''}" data-field="weight">`}
         <input type="number" inputmode="numeric" min="0" enterkeyhint="next" placeholder="${ex.timeLabel ? 'Sek' : 'Wdh'}" value="${s.reps ?? ''}" data-field="reps">
-        <button class="check" data-field="done">${s.done ? '✓' : ''}</button>
+        <div class="check" aria-hidden="true">${s.done ? '✓' : ''}</div>
       </div>`;
   }
 
@@ -667,11 +667,25 @@ function bindExerciseEvents(){
         badge.style.display = isPR ? "inline-block" : "none";
       };
 
+      // Ein Satz gilt als erledigt, sobald Wiederholungen (bzw. Sekunden) eingetragen sind —
+      // kein manuelles Abhaken mehr nötig.
+      const updateDone = ()=>{
+        const wasDone = !!log.sets[idx].done;
+        const repsVal = (log.sets[idx].reps ?? "").toString().trim();
+        const nowDone = repsVal !== "";
+        log.sets[idx].done = nowDone;
+        row.classList.toggle("done", nowDone);
+        const checkEl = row.querySelector(".check");
+        if(checkEl) checkEl.textContent = nowDone ? "✓" : "";
+        if(nowDone && !wasDone) showToast("Satz gespeichert");
+      };
+
       row.querySelectorAll("input").forEach(input=>{
         input.addEventListener("input", ()=>{
           log.sets[idx][input.dataset.field] = input.value;
           saveState();
           updatePR();
+          updateDone();
         });
         input.addEventListener("keydown", (e)=>{
           if(e.key === "Enter"){
@@ -679,14 +693,6 @@ function bindExerciseEvents(){
             focusNextInput(card, input);
           }
         });
-      });
-      row.querySelector(".check").addEventListener("click", ()=>{
-        const done = !log.sets[idx].done;
-        log.sets[idx].done = done;
-        row.classList.toggle("done", done);
-        row.querySelector(".check").textContent = done ? "✓" : "";
-        saveState();
-        if(done) showToast("Satz gespeichert");
       });
     });
 
