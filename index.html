@@ -151,7 +151,7 @@
     padding:8px 6px; font-size:11px; font-weight:600; color:var(--muted);}
   .backupbtn:active{background:var(--surface2); color:var(--text);}
 
-  .weightcard{margin-top:10px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px;}
+  .weightcard{margin:10px 16px 0; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px;}
   .weightrow{display:flex; align-items:center; justify-content:space-between; gap:10px;}
   .wt-label{font-size:12px; color:var(--muted);}
   .wt-trend{font-size:13px; font-weight:600; margin-top:2px;}
@@ -184,21 +184,22 @@
       <div class="sub" id="ruleSub">Zyklus-Woche 1 von 7</div>
     </div>
   </div>
-  <div class="weightcard" id="weightCard">
-    <div class="weightrow">
-      <div class="wtxt">
-        <div class="wt-label">Körpergewicht heute</div>
-        <div class="wt-trend mono" id="wtTrend">–</div>
-      </div>
-      <input type="number" inputmode="decimal" min="0" step="0.1" class="wt-input" id="wtInput" placeholder="kg">
-    </div>
-    <div id="wtSparkWrap"></div>
-  </div>
   <div class="backuprow">
     <button class="backupbtn" id="exportBtn">⬇ Backup exportieren</button>
     <button class="backupbtn" id="importBtn">⬆ Backup importieren</button>
     <input type="file" id="importFile" accept="application/json" hidden>
   </div>
+</div>
+
+<div class="weightcard" id="weightCard">
+  <div class="weightrow">
+    <div class="wtxt">
+      <div class="wt-label">Körpergewicht heute</div>
+      <div class="wt-trend mono" id="wtTrend">–</div>
+    </div>
+    <input type="number" inputmode="decimal" min="0" step="0.1" class="wt-input" id="wtInput" placeholder="kg">
+  </div>
+  <div id="wtSparkWrap"></div>
 </div>
 
 <div class="daywrap" id="dayWrap"></div>
