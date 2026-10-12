@@ -95,7 +95,8 @@
 
   .ex-body{display:grid; grid-template-rows:0fr; transition:grid-template-rows .25s ease; overflow:hidden;}
   .ex.open .ex-body{grid-template-rows:1fr;}
-  .ex-body-inner{overflow:hidden; min-height:0; padding:0 14px 14px;}
+  .ex-body-inner{overflow:hidden; min-height:0;}
+  .ex-pad{padding:0 14px 14px;}
   .note{font-size:12px; color:var(--muted); background:var(--surface2); border-radius:8px; padding:8px 10px; margin-bottom:10px;}
   .setrow{display:grid; grid-template-columns:28px 1fr 1fr 34px; gap:8px; align-items:center; margin-bottom:6px;}
   .setrow.noweight{grid-template-columns:28px 1fr 34px;}
@@ -191,6 +192,7 @@
   <button data-day="3" class="rest"><span class="dot"></span>Tag 3</button>
   <button data-day="4"><span class="dot"></span>Tag 4</button>
   <button data-day="5"><span class="dot"></span>Tag 5</button>
+  <button data-day="6" class="rest"><span class="dot"></span>Home</button>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -236,7 +238,7 @@ const PLAN = {
       {name:"Plank oder Bauchsätze nach Wahl", sets:3, rest:60, noWeight:true},
     ]
   },
-  3: { rest:true, activity: "30–45 Minuten Spaziergang, Mobility-Übungen & Dehnen" },
+  3: { rest:true, activity: "30–45 Minuten zügiger Spaziergang, Mobility-Übungen & Dehnen.<br><br>Ideal für die 15-Minuten-Home-Routine (Tab „Home“) — Beckenboden, Hüfte & Entspannung." },
   4: {
     title: "Oberkörper (Hypertrophie)",
     warmup: "5 Min. Ergometer + dynamisches Schulteraufwärmen",
@@ -259,6 +261,7 @@ const PLAN = {
     warmup: "5–10 Min. Ergometer/Crosstrainer",
     exercises: [
       {name:"Goblet Squats", sets:4, reps:"10-12", rest:90, main:true, pre:"1–2 Aufwärmsätze davor"},
+      {name:"Hip Thrusts", sets:3, reps:"10-12", rest:90, note:"Oberer Rücken an der Bank, Langhantel oder Kurzhantel auf der Hüfte (mit Polster). Oben das Gesäß 1 Sek. fest anspannen, Kinn leicht zur Brust, nicht ins Hohlkreuz drücken. Langsam absenken."},
       {name:"Rudern am Kabel", sets:4, reps:"12", rest:60},
       {name:"Schulterdrücken Kurzhantel", sets:3, reps:"10", rest:90},
       {name:"Liegestütze", sets:3, reps:"Max", rest:60, noWeight:true},
@@ -268,6 +271,24 @@ const PLAN = {
       {name:"Plank", sets:3, timeLabel:"60 Sekunden", rest:60, noWeight:true},
     ],
     cardio: "15–20 Min. lockeres Cardio (Ergometer/Crosstrainer)"
+  },
+  6: {
+    label: "Home",
+    title: "Home-Routine (ca. 15 Min.)",
+    fixed: true, // keine Zyklus-Regeln (Deload, +1 Wdh. usw.) — hier zählt saubere Ausführung
+    intro: "<b>Ziel:</b> Beckenboden, Hüfte & Entspannung — für Intimleben, Ausdauer und Kontrolle.<br><b>Empfehlung:</b> 3–4× pro Woche (Tag 3 plus 2–3 weitere Tage), der Beckenboden-Teil gern täglich. Bei Schmerzen im Becken- oder Genitalbereich abbrechen und ärztlich abklären lassen.",
+    exercises: [
+      {name:"Glute Bridge", sets:3, reps:"12", rest:30, noWeight:true,
+        note:"Rückenlage, Füße aufstellen, Becken anheben. Oben das Gesäß ca. 2 Sek. anspannen, dann langsam absenken. Nicht ins Hohlkreuz drücken. Zu leicht? → 3 Sek. halten oder einbeinig. (ca. 3 Min.)"},
+      {name:"Bird Dog", sets:2, reps:"8 je Seite", rest:30, noWeight:true,
+        note:"Vierfüßlerstand, einen Arm und das gegenüberliegende Bein strecken, 2 Sek. halten. Rücken ruhig, Becken nicht kippen, Bewegung kontrolliert. (ca. 3 Min.)"},
+      {name:"Beckenboden kontrolliert anspannen", sets:2, reps:"8", rest:30, noWeight:true,
+        note:"Anspannen, als würdest du Winde zurückhalten. 3–5 Sek. halten, danach 5–10 Sek. vollständig entspannen. Weiteratmen, Gesäß, Bauch und Oberschenkel locker lassen. Steigerung nach 2–3 Wochen: 3 × 10 mit 5 Sek. Halten. (ca. 3–4 Min.)"},
+      {name:"Hüftmobilität (tiefe Kniebeuge)", sets:2, timeLabel:"30 Sekunden", rest:20, noWeight:true,
+        note:"In eine angenehm tiefe Kniebeuge gehen, bei Bedarf festhalten. Ruhig atmen, Ellenbogen drücken sanft die Knie nach außen. Keine Schmerzen, nichts erzwingen. (ca. 2 Min.)"},
+      {name:"Entspannungsatmung", sets:1, timeLabel:"3 Minuten", rest:180, noWeight:true, noLog:true, timerLabel:"Timer für die Atemübung",
+        note:"Liegend oder sitzend ca. 4 Sek. langsam in den Bauch einatmen, ca. 6 Sek. ausatmen. Beckenboden dabei locker lassen — beim Ausatmen nicht bewusst anspannen."},
+    ]
   }
 };
 
@@ -403,12 +424,13 @@ function renderExercise(ex, opts){
   const restLabel = ex.rest >= 60 ? `${Math.round(ex.rest/60*10)/10} Min.`.replace(".0","") : `${ex.rest} Sek.`;
 
   const id = "ex" + (exCounter++);
-  const latest = getLatestLog(opts.day, ex.name);
-  const curLog = getCurrentLog(opts.day, state.week, ex.name);
+  const noLog = !!ex.noLog; // reine Anleitung + Timer, ohne Eingabefelder
+  const latest = noLog ? null : getLatestLog(opts.day, ex.name);
+  const curLog = noLog ? {sets:[]} : getCurrentLog(opts.day, state.week, ex.name);
   const best = getBestBefore(opts.day, ex.name, noWeight);
 
   let setsHtml = "";
-  for(let i=0;i<sets;i++){
+  for(let i=0;i<(noLog ? 0 : sets);i++){
     const isLast = i === sets-1;
     const flagDrop = isLast && dropIso;
     const flagRir = isLast && rirThis;
@@ -433,9 +455,9 @@ function renderExercise(ex, opts){
   const metaBits = [];
   if(ex.pre) metaBits.push(ex.pre);
   metaBits.push(`${sets} × ${ex.timeLabel ? ex.timeLabel : reps}`);
-  metaBits.push(`Pause ${restLabel}`);
+  if(!noLog) metaBits.push(`Pause ${restLabel}`);
 
-  const historyList = getHistoryList(opts.day, ex.name, noWeight);
+  const historyList = noLog ? [] : getHistoryList(opts.day, ex.name, noWeight);
   const historyHtml = renderHistory(historyList, noWeight, ex.timeLabel);
 
   return `
@@ -452,15 +474,15 @@ function renderExercise(ex, opts){
         <div class="chev">▾</div>
       </div>
       <div class="ex-body">
-        <div class="ex-body-inner">
+        <div class="ex-body-inner"><div class="ex-pad">
           ${ex.note ? `<div class="note">${ex.note}</div>` : ""}
           ${setsHtml}
           <div class="rest-row">
-            <div class="lbl">Pause zwischen Sätzen</div>
+            <div class="lbl">${ex.timerLabel || 'Pause zwischen Sätzen'}</div>
             <button class="timerbtn" data-rest="${ex.rest}">⏱ ${restLabel}</button>
           </div>
           ${historyHtml}
-        </div>
+        </div></div>
       </div>
     </div>`;
 }
@@ -592,14 +614,21 @@ function renderDay(){
     return;
   }
 
-  const mods = weekMods(state.week);
+  const mods = day.fixed
+    ? {offset:0, repBonus:0, setBonusMain:0, dropsetIso:false, rirMain:false, deload:false}
+    : weekMods(state.week);
   let html = "";
-  html += `<div class="daytitle">Tag ${state.day} · ${day.title}</div>`;
+  html += `<div class="daytitle">${day.label || ('Tag ' + state.day)} · ${day.title}</div>`;
   if(mods.deload){
     html += `<div class="badge" style="color:var(--coral)">DELOAD-WOCHE</div>`;
   }
 
-  html += `<div class="warmupcard"><div class="ico">🔥</div><div><div class="t">Aufwärmen</div><div class="d">${day.warmup}</div></div></div>`;
+  if(day.intro){
+    html += `<div class="infobox">${day.intro}</div>`;
+  }
+  if(day.warmup){
+    html += `<div class="warmupcard"><div class="ico">🔥</div><div><div class="t">Aufwärmen</div><div class="d">${day.warmup}</div></div></div>`;
+  }
 
   html += `<div class="sectionlabel">Übungen</div>`;
   day.exercises.forEach((ex,i)=>{
@@ -618,7 +647,9 @@ function renderDay(){
     });
   }
 
-  html += `<div class="footnote">Zyklus wiederholt sich alle 7 Wochen (Woche 24 ≈ Woche 17, usw.). Passe Gewichte manuell an Fortschritt an — die App merkt sich dein letztes Gewicht pro Übung.</div>`;
+  html += day.fixed
+    ? `<div class="footnote">Hier zählt Regelmäßigkeit, nicht Härte: lieber kurz und sauber als verkrampft. Trag pro Woche deine beste Einheit ein — die Zyklus-Regeln der Trainingstage gelten für diese Routine nicht.</div>`
+    : `<div class="footnote">Zyklus wiederholt sich alle 7 Wochen (Woche 24 ≈ Woche 17, usw.). Passe Gewichte manuell an Fortschritt an — die App merkt sich dein letztes Gewicht pro Übung.</div>`;
 
   wrap.innerHTML = html;
   bindExerciseEvents();
