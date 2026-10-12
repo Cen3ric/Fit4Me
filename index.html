@@ -147,6 +147,19 @@
 
   .footnote{margin-top:24px; font-size:11px; color:#565b66; line-height:1.6; padding:0 2px;}
 
+  .sessioncard{margin-top:12px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px;}
+  .sess-top{display:flex; align-items:center; justify-content:space-between; gap:12px;}
+  .sess-label{font-size:12px; color:var(--muted);}
+  .sess-count{font-size:26px; font-weight:700; line-height:1.15;}
+  .sess-sub{font-size:12px; color:var(--muted); text-align:right;}
+  .sess-bar{display:flex; gap:6px; margin-top:10px;}
+  .sess-seg{flex:1; height:8px; border-radius:4px; background:var(--border);}
+  .sess-seg.on{background:var(--teal);}
+  .sess-btns{display:flex; gap:8px; margin-top:12px;}
+  .sess-btn{flex:1; padding:11px 8px; border-radius:10px; background:var(--surface2); border:1px solid var(--border); font-size:13px; font-weight:600;}
+  .sess-btn.minus{flex:none; width:52px;}
+  .sess-btn.plus{background:var(--teal); border-color:var(--teal); color:#0c1210;}
+
   .backuprow{margin-top:8px; display:flex; gap:8px;}
   .backupbtn{flex:1; background:var(--surface); border:1px solid var(--border); border-radius:10px;
     padding:8px 6px; font-size:11px; font-weight:600; color:var(--muted);}
@@ -274,20 +287,20 @@ const PLAN = {
   },
   6: {
     label: "Home",
-    title: "Home-Routine (ca. 15 Min.)",
-    fixed: true, // keine Zyklus-Regeln (Deload, +1 Wdh. usw.) — hier zählt saubere Ausführung
-    intro: "<b>Ziel:</b> Beckenboden, Hüfte & Entspannung — für Intimleben, Ausdauer und Kontrolle.<br><b>Empfehlung:</b> 3–4× pro Woche (Tag 3 plus 2–3 weitere Tage), der Beckenboden-Teil gern täglich. Bei Schmerzen im Becken- oder Genitalbereich abbrechen und ärztlich abklären lassen.",
+    title: "Home-Routine (ca. 12–15 Min.)",
+    fixed: true,   // keine Zyklus-Regeln (Deload, +1 Wdh. usw.)
+    counter: true, // Wochen-Zähler statt Eingabefelder
+    target: 4,
+    intro: "<b>Ziel:</b> Beckenboden & Hüfte — für Intimleben, Ausdauer und Kontrolle.<br><b>Empfehlung:</b> 3–4× pro Woche (Tag 3 plus 2–3 weitere Tage), der Beckenboden-Teil gern täglich. Bei Schmerzen im Becken- oder Genitalbereich abbrechen und ärztlich abklären lassen.",
     exercises: [
-      {name:"Glute Bridge", sets:3, reps:"12", rest:30, noWeight:true,
+      {name:"Glute Bridge", sets:3, reps:"12", rest:30, noWeight:true, noLog:true,
         note:"Rückenlage, Füße aufstellen, Becken anheben. Oben das Gesäß ca. 2 Sek. anspannen, dann langsam absenken. Nicht ins Hohlkreuz drücken. Zu leicht? → 3 Sek. halten oder einbeinig. (ca. 3 Min.)"},
-      {name:"Bird Dog", sets:2, reps:"8 je Seite", rest:30, noWeight:true,
+      {name:"Bird Dog", sets:2, reps:"8 je Seite", rest:30, noWeight:true, noLog:true,
         note:"Vierfüßlerstand, einen Arm und das gegenüberliegende Bein strecken, 2 Sek. halten. Rücken ruhig, Becken nicht kippen, Bewegung kontrolliert. (ca. 3 Min.)"},
-      {name:"Beckenboden kontrolliert anspannen", sets:2, reps:"8", rest:30, noWeight:true,
-        note:"Anspannen, als würdest du Winde zurückhalten. 3–5 Sek. halten, danach 5–10 Sek. vollständig entspannen. Weiteratmen, Gesäß, Bauch und Oberschenkel locker lassen. Steigerung nach 2–3 Wochen: 3 × 10 mit 5 Sek. Halten. (ca. 3–4 Min.)"},
-      {name:"Hüftmobilität (tiefe Kniebeuge)", sets:2, timeLabel:"30 Sekunden", rest:20, noWeight:true,
+      {name:"Hüftmobilität (tiefe Kniebeuge)", sets:2, timeLabel:"30 Sekunden", rest:20, noWeight:true, noLog:true,
         note:"In eine angenehm tiefe Kniebeuge gehen, bei Bedarf festhalten. Ruhig atmen, Ellenbogen drücken sanft die Knie nach außen. Keine Schmerzen, nichts erzwingen. (ca. 2 Min.)"},
-      {name:"Entspannungsatmung", sets:1, timeLabel:"3 Minuten", rest:180, noWeight:true, noLog:true, timerLabel:"Timer für die Atemübung",
-        note:"Liegend oder sitzend ca. 4 Sek. langsam in den Bauch einatmen, ca. 6 Sek. ausatmen. Beckenboden dabei locker lassen — beim Ausatmen nicht bewusst anspannen."},
+      {name:"Beckenboden kontrolliert anspannen", sets:2, reps:"8", rest:30, noWeight:true, noLog:true,
+        note:"Anspannen, als würdest du Winde zurückhalten. 3–5 Sek. halten, danach 5–10 Sek. vollständig entspannen. Weiteratmen, Gesäß, Bauch und Oberschenkel locker lassen. Kontrolle im Spiegel: Der Penis hebt sich leicht, Po und Bauch bleiben locker. Steigerung nach 2–3 Wochen: 3 × 10 mit 5 Sek. Halten. Zum Abschluss 3 ruhige Atemzüge, beim Ausatmen alles loslassen. (ca. 3–4 Min.)"},
     ]
   }
 };
@@ -626,6 +639,9 @@ function renderDay(){
   if(day.intro){
     html += `<div class="infobox">${day.intro}</div>`;
   }
+  if(day.counter){
+    html += `<div class="sessioncard" id="sessionCard"></div>`;
+  }
   if(day.warmup){
     html += `<div class="warmupcard"><div class="ico">🔥</div><div><div class="t">Aufwärmen</div><div class="d">${day.warmup}</div></div></div>`;
   }
@@ -648,11 +664,54 @@ function renderDay(){
   }
 
   html += day.fixed
-    ? `<div class="footnote">Hier zählt Regelmäßigkeit, nicht Härte: lieber kurz und sauber als verkrampft. Trag pro Woche deine beste Einheit ein — die Zyklus-Regeln der Trainingstage gelten für diese Routine nicht.</div>`
+    ? `<div class="footnote">Hier zählt Regelmäßigkeit, nicht Härte: lieber kurz und sauber als verkrampft. Tippe oben auf „Einheit erledigt“, wenn du fertig bist — die Zyklus-Regeln der Trainingstage gelten für diese Routine nicht.</div>`
     : `<div class="footnote">Zyklus wiederholt sich alle 7 Wochen (Woche 24 ≈ Woche 17, usw.). Passe Gewichte manuell an Fortschritt an — die App merkt sich dein letztes Gewicht pro Übung.</div>`;
 
   wrap.innerHTML = html;
   bindExerciseEvents();
+  if(day.counter) renderSessionCard(day);
+}
+
+/* ---------------------------------------------------------------
+   WOCHEN-ZÄHLER (Home-Routine)
+--------------------------------------------------------------- */
+function renderSessionCard(day){
+  const el = document.getElementById("sessionCard");
+  if(!el) return;
+  if(!state.sessions) state.sessions = {};
+  const target = day.target || 4;
+  const count = state.sessions[state.week] || 0;
+  const last = state.sessions[state.week-1];
+  const segs = Math.max(target, count);
+  let bar = "";
+  for(let i=0;i<segs;i++) bar += `<div class="sess-seg${i<count ? ' on' : ''}"></div>`;
+  const status = count >= target ? "✓ Ziel erreicht" : `Ziel: ${target-1}–${target} pro Woche`;
+  el.innerHTML = `
+    <div class="sess-top">
+      <div>
+        <div class="sess-label">Einheiten diese Woche</div>
+        <div class="sess-count mono">${count} / ${target}</div>
+      </div>
+      <div class="sess-sub">${status}${last != null ? `<br>Letzte Woche: ${last}` : ""}</div>
+    </div>
+    <div class="sess-bar">${bar}</div>
+    <div class="sess-btns">
+      <button class="sess-btn minus" id="sessMinus" aria-label="Eine Einheit zurück">−</button>
+      <button class="sess-btn plus" id="sessPlus">+ Einheit erledigt</button>
+    </div>`;
+  document.getElementById("sessPlus").addEventListener("click", ()=>{
+    state.sessions[state.week] = count + 1;
+    saveState();
+    renderSessionCard(day);
+    showToast("Einheit gespeichert");
+  });
+  document.getElementById("sessMinus").addEventListener("click", ()=>{
+    if(count > 0){
+      state.sessions[state.week] = count - 1;
+      saveState();
+      renderSessionCard(day);
+    }
+  });
 }
 
 /* ---------------------------------------------------------------
