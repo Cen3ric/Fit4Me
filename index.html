@@ -113,6 +113,7 @@
   .flagtag.drop{background:rgba(228,99,75,.15); color:var(--coral);}
   .flagtag.rir{background:rgba(212,162,78,.15); color:var(--brass);}
   .flagtag.pr{background:rgba(69,196,176,.18); color:var(--teal);}
+  .flagtag.headflag{display:inline-block; margin-left:8px; vertical-align:middle; white-space:nowrap;}
 
   .history{margin-top:12px; padding-top:10px; border-top:1px dashed var(--border);}
   .history-title{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:6px;}
@@ -479,7 +480,7 @@ function renderExercise(ex, opts){
         <div class="left">
           <div class="ex-num">${opts.num}</div>
           <div>
-            <div class="name">${ex.name}</div>
+            <div class="name">${ex.name}${dropIso ? '<span class="flagtag drop headflag">DROP im letzten Satz</span>' : ''}${rirThis ? '<span class="flagtag rir headflag">RIR 0-1 im letzten Satz</span>' : ''}</div>
             <div class="meta">${metaBits.join(" · ")}</div>
             ${latest ? `<div class="lastlog">Letztes Mal (Wo ${latest.week}): ${formatLastSets(latest.sets, noWeight, ex.timeLabel)}</div>` : ""}
           </div>
