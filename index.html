@@ -129,6 +129,10 @@
   .timerbtn{background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600;
     display:flex; align-items:center; gap:6px; font-family:'IBM Plex Mono',monospace;}
   .timerbtn.running{background:var(--brass); color:#1a1200; border-color:var(--brass);}
+  .rest-row.two{display:block;}
+  .timer-group{display:flex; gap:8px;}
+  .timer-group .timerbtn{flex:1; justify-content:center; white-space:nowrap; padding:10px 8px;}
+  .timerbtn.hold.running{background:var(--teal); border-color:var(--teal);}
 
   .warmupcard{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:14px;
     display:flex; gap:10px; align-items:flex-start;}
@@ -441,6 +445,9 @@ function renderExercise(ex, opts){
 
   const id = "ex" + (exCounter++);
   const noLog = !!ex.noLog; // reine Anleitung + Timer, ohne Eingabefelder
+  // Haltezeit-Timer für Übungen mit Zeitangabe (z. B. "30 Sekunden")
+  const holdSecs = ex.timeLabel ? (parseInt(ex.timeLabel,10) || 0) : 0;
+  const holdLabel = holdSecs >= 60 ? `${Math.round(holdSecs/60*10)/10} Min.`.replace(".0","") : `${holdSecs} Sek.`;
   const latest = noLog ? null : getLatestLog(opts.day, ex.name);
   const curLog = noLog ? {sets:[]} : getCurrentLog(opts.day, state.week, ex.name);
   const best = getBestBefore(opts.day, ex.name, noWeight);
@@ -493,10 +500,17 @@ function renderExercise(ex, opts){
         <div class="ex-body-inner"><div class="ex-pad">
           ${ex.note ? `<div class="note">${ex.note}</div>` : ""}
           ${setsHtml}
+          ${holdSecs ? `
+          <div class="rest-row two">
+            <div class="timer-group">
+              <button class="timerbtn hold" data-hold="${holdSecs}">▶ Halten ${holdLabel}</button>
+              <button class="timerbtn" data-rest="${ex.rest}">⏱ Pause ${restLabel}</button>
+            </div>
+          </div>` : `
           <div class="rest-row">
             <div class="lbl">${ex.timerLabel || 'Pause zwischen Sätzen'}</div>
             <button class="timerbtn" data-rest="${ex.rest}">⏱ ${restLabel}</button>
-          </div>
+          </div>`}
           ${historyHtml}
         </div></div>
       </div>
@@ -790,11 +804,18 @@ function bindExerciseEvents(){
     });
 
     const timerBtn = card.querySelector("[data-rest]");
-    if(timerBtn) bindTimer(timerBtn, parseInt(timerBtn.dataset.rest,10));
+    const holdBtn = card.querySelector("[data-hold]");
+    if(timerBtn) bindTimer(timerBtn, parseInt(timerBtn.dataset.rest,10),
+      holdBtn ? {runPrefix:"⏱ Pause "} : undefined);
+    if(holdBtn) bindTimer(holdBtn, parseInt(holdBtn.dataset.hold,10),
+      {runPrefix:"▶ Halten ", doneMsg:"Zeit! Satz geschafft 💪"});
   });
 }
 
-function bindTimer(btn, seconds){
+function bindTimer(btn, seconds, opts){
+  opts = opts || {};
+  const runPrefix = opts.runPrefix || "⏱ ";
+  const doneMsg = opts.doneMsg || "Pause vorbei 💪";
   let interval = null;
   let remaining = seconds;
   const label = btn.textContent;
@@ -817,7 +838,7 @@ function bindTimer(btn, seconds){
         interval = null;
         btn.classList.remove("running");
         btn.textContent = label;
-        showToast("Pause vorbei 💪");
+        showToast(doneMsg);
         if(navigator.vibrate) navigator.vibrate([120,60,120]);
         return;
       }
@@ -827,7 +848,7 @@ function bindTimer(btn, seconds){
   function updateTimerLabel(){
     const m = Math.floor(remaining/60);
     const s = remaining%60;
-    btn.textContent = `⏱ ${m}:${s.toString().padStart(2,'0')}`;
+    btn.textContent = `${runPrefix}${m}:${s.toString().padStart(2,'0')}`;
   }
 }
 
