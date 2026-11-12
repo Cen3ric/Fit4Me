@@ -296,7 +296,7 @@ const PLAN = {
     fixed: true,   // keine Zyklus-Regeln (Deload, +1 Wdh. usw.)
     counter: true, // Wochen-Zähler statt Eingabefelder
     target: 4,
-    intro: "<b>Ziel:</b> Beckenboden & Hüfte — für Intimleben, Ausdauer und Kontrolle.<br><b>Empfehlung:</b> 3–4× pro Woche (Tag 3 plus 2–3 weitere Tage), der Beckenboden-Teil gern täglich. Bei Schmerzen im Becken- oder Genitalbereich abbrechen und ärztlich abklären lassen.",
+    intro: "<b>Ziel:</b> Beckenboden & Hüfte — für Intimleben, Ausdauer und Kontrolle.<br><b>Empfehlung:</b> 3–4× pro Woche (Tag 3 plus 2–3 weitere Tage), auch der Beckenboden-Teil nur 4–5× pro Woche mit freien Tagen dazwischen (der Muskel braucht Erholung). Bei Schmerzen im Becken- oder Genitalbereich abbrechen und ärztlich abklären lassen.",
     exercises: [
       {name:"Glute Bridge", sets:3, reps:"12", rest:30, noWeight:true, noLog:true,
         note:"Rückenlage, Füße aufstellen, Becken anheben. Oben das Gesäß ca. 2 Sek. anspannen, dann langsam absenken. Nicht ins Hohlkreuz drücken. Zu leicht? → 3 Sek. halten oder einbeinig. (ca. 3 Min.)"},
@@ -856,7 +856,7 @@ document.getElementById("prevWeek").addEventListener("click", ()=>{
   if(state.week > 17){ state.week--; saveState(); renderAll(); }
 });
 document.getElementById("nextWeek").addEventListener("click", ()=>{
-  if(state.week < 33){ state.week++; saveState(); renderAll(); }
+  if(state.week < 52){ state.week++; saveState(); renderAll(); }
 });
 document.getElementById("tabs").addEventListener("click", (e)=>{
   const btn = e.target.closest("button");
