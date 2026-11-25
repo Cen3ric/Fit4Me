@@ -92,6 +92,7 @@
   .ex-head .chev{color:var(--muted); font-size:14px; transition:transform .2s;}
   .ex.open .chev{transform:rotate(180deg);}
   .lastlog{font-size:11px; color:var(--teal); margin-top:2px; font-family:'IBM Plex Mono',monospace;}
+  .lastlog.deloadhint{color:var(--coral); font-weight:600;}
 
   .ex-body{display:grid; grid-template-rows:0fr; transition:grid-template-rows .25s ease; overflow:hidden;}
   .ex.open .ex-body{grid-template-rows:1fr;}
@@ -414,6 +415,22 @@ function getLatestLog(day, exName){
   }
   return null;
 }
+// Deload-Hilfe: Gewicht des letzten Satzes aus der letzten Woche VOR der aktuellen
+function getPrevLog(day, exName, beforeWeek){
+  const hist = state.logs[logKey(day, exName)];
+  if(!hist) return null;
+  const weeks = Object.keys(hist).map(Number).filter(w=>w < beforeWeek).sort((a,b)=>b-a);
+  for(const w of weeks){
+    const entry = hist[w];
+    if(entry && entry.sets){
+      const done = entry.sets.filter(s=> s && parseFloat(s.weight) > 0);
+      if(done.length) return {week:w, weight:parseFloat(done[done.length-1].weight)};
+    }
+  }
+  return null;
+}
+function deloadWeight(w){ return Math.max(2.5, Math.round(w * 0.85 / 2.5) * 2.5); } // −15 %, auf 2,5 kg gerundet
+function fmtKg(n){ return String(Math.round(n * 100) / 100); }
 function getCurrentLog(day, week, exName){
   const key = logKey(day, exName);
   if(!state.logs[key]) state.logs[key] = {};
@@ -451,6 +468,7 @@ function renderExercise(ex, opts){
   const latest = noLog ? null : getLatestLog(opts.day, ex.name);
   const curLog = noLog ? {sets:[]} : getCurrentLog(opts.day, state.week, ex.name);
   const best = getBestBefore(opts.day, ex.name, noWeight);
+  const deloadInfo = (mods.deload && !noWeight && !noLog) ? getPrevLog(opts.day, ex.name, state.week) : null;
 
   let setsHtml = "";
   for(let i=0;i<(noLog ? 0 : sets);i++){
@@ -492,6 +510,7 @@ function renderExercise(ex, opts){
             <div class="name">${ex.name}${dropIso ? '<span class="flagtag drop headflag">DROP im letzten Satz</span>' : ''}${rirThis ? '<span class="flagtag rir headflag">RIR 0-1 im letzten Satz</span>' : ''}</div>
             <div class="meta">${metaBits.join(" · ")}</div>
             ${latest ? `<div class="lastlog">Letztes Mal (Wo ${latest.week}): ${formatLastSets(latest.sets, noWeight, ex.timeLabel)}</div>` : ""}
+            ${deloadInfo ? `<div class="lastlog deloadhint">Deload: ${fmtKg(deloadWeight(deloadInfo.weight))}kg (−15 % von ${fmtKg(deloadInfo.weight)}kg)</div>` : ""}
           </div>
         </div>
         <div class="chev">▾</div>
